@@ -43,11 +43,11 @@ class TaskService:
     """
 
     GET_TASK_BY_ID = """
-        SELECT * FROM tasks WHERE id = ?;
+        SELECT id, date, task, done FROM tasks WHERE id = ?;
     """
 
     GET_ALL_TASKS_FOR_DAY = """
-        SELECT * FROM tasks WHERE date = ?;
+        SELECT id, date, task, done FROM tasks WHERE date = ?;
     """
 
     def __init__(self, db_path: str = DEFAULT_PATH):
@@ -92,14 +92,28 @@ class TaskService:
 
 if __name__ == '__main__':
     task_service = TaskService()
+    task_service.create_schema()
 
     parser = argparse.ArgumentParser(prog='wdid',
-                                     description='What did I do? A personal task list manager.',
-                                     allow_abbrev=False)
-    parser.add_argument('-t', '--today', action='store_const', const='today', help='today\'s tasks')
+                                     description='What did I do? A personal task list manager.')
+    subparsers = parser.add_subparsers(dest='command')
+    list_command = subparsers.add_parser('list', help='list tasks for different day(s)')
+    add_command = subparsers.add_parser('add', help='add task for a certain day')
+    add_command.add_argument('-n',
+                             '--name',
+                             action='store',
+                             help='name of the task',
+                             required=True)
+    add_command.add_argument('-d',
+                             '--date',
+                             action='store',
+                             help='date of the task')
     args = parser.parse_args()
 
-    if args.today:
-        task_service.get_tasks_for_date()
+    if args.command == 'list':
+        tasks = task_service.get_tasks_for_date()
+        print(tasks)
+    elif args.command == 'add':
+        task_service.insert_task(args.name)
 
     task_service.close_connection()
