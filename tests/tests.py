@@ -1,7 +1,9 @@
 import os
 import unittest
+from datetime import date
 
-from wdid import create_connection, create_schema, insert_task, count_tasks, update_task, get_task_by_id
+from wdid import create_connection, create_schema, insert_task, count_tasks, update_task, get_task_by_id, \
+    get_tasks_for_date
 
 TEST_DATABASE = os.path.join(os.path.dirname(__file__), 'test.sqlite3')
 
@@ -36,6 +38,17 @@ class DatabaseTests(unittest.TestCase):
     def test_get_non_existing_task(self):
         task = get_task_by_id(self.connection, 1)
         self.assertIsNone(task)
+
+    def test_get_tasks_for_day(self):
+        insert_task(self.connection, "Foo", date(2021, 1, 3))
+        insert_task(self.connection, "Bar", date(2021, 1, 4))
+        insert_task(self.connection, "Baz", date(2021, 1, 4))
+        insert_task(self.connection, "Foo", date(2021, 1, 5))
+
+        tasks = get_tasks_for_date(self.connection, date(2021, 1, 4))
+        self.assertEqual(len(tasks), 2)
+        for task in tasks:
+            self.assertEqual(task.date, date(2021, 1, 4))
 
     def tearDown(self):
         self.connection.close()

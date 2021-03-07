@@ -1,9 +1,10 @@
+import argparse
 import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
 from sqlite3 import Connection, Error
-from typing import Optional
+from typing import Optional, List
 
 DEFAULT_PATH = os.path.join(os.path.dirname(__file__), 'db.sqlite3')
 
@@ -30,6 +31,10 @@ UPDATE_TASK = """
 
 GET_TASK_BY_ID = """
     SELECT * FROM tasks WHERE id = ?;
+"""
+
+GET_ALL_TASKS_FOR_DAY = """
+    SELECT * FROM tasks WHERE date = ?;
 """
 
 
@@ -84,7 +89,24 @@ def get_task_by_id(conn: Connection, task_id: int) -> Optional[Task]:
     return Task.from_tuple(row)
 
 
+def get_tasks_for_date(conn: Connection, date: date = date.today()) -> List[Task]:
+    cur = conn.cursor()
+    cur.execute(GET_ALL_TASKS_FOR_DAY, (date,))
+    all_tasks = cur.fetchall()
+    return [Task.from_tuple(task) for task in all_tasks]
+
+
 if __name__ == '__main__':
     connection = create_connection()
     create_schema(connection)
+
+    parser = argparse.ArgumentParser(prog='wdid',
+                                     description='What did I do? A personal task list manager.',
+                                     allow_abbrev=False)
+    parser.add_argument('-t', '--today', action='store_const', const='today', help='today\'s tasks')
+    args = parser.parse_args()
+
+    if args.today:
+        get_tasks_for_date(connection)
+
     connection.close()
