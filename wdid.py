@@ -3,7 +3,7 @@ import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 DEFAULT_PATH = os.path.join(os.path.dirname(__file__), 'db.sqlite3')
 
@@ -47,7 +47,7 @@ class TaskService:
     """
 
     GET_ALL_TASKS_FOR_DAY = """
-        SELECT id, date, task, done FROM tasks WHERE date = ?;
+        SELECT id, date, task, done FROM tasks WHERE date = ? ORDER BY date ASC;
     """
 
     def __init__(self, db_path: str = DEFAULT_PATH):
@@ -83,11 +83,28 @@ class TaskService:
             return None
         return Task.from_tuple(row)
 
-    def get_tasks_for_date(self, date: date = date.today()) -> List[Task]:
+    def get_tasks_for_date(self, date: date = date.today()) -> Dict[date, List[Task]]:
         cur = self.connection.cursor()
         cur.execute(TaskService.GET_ALL_TASKS_FOR_DAY, (date,))
-        all_tasks = cur.fetchall()
-        return [Task.from_tuple(task) for task in all_tasks]
+        tasks = [Task.from_tuple(task) for task in cur.fetchall()]
+        return TaskService._group_tasks_by_date(tasks)
+
+    # TODO look into itertools groupby
+    @staticmethod
+    def _group_tasks_by_date(tasks: List[Task]) -> Dict[date, List[Task]]:
+        group_by_date = {}
+        for task in tasks:
+            if task.date not in group_by_date:
+                group_by_date[task.date] = []
+            group_by_date[task.date].append(task)
+        return group_by_date
+
+
+def task_printer(tasks: Dict[date, List[Task]]):
+    for date in tasks.keys():
+        print(date)
+        for task in tasks[date]:
+            print("-", task)
 
 
 if __name__ == '__main__':
@@ -112,7 +129,7 @@ if __name__ == '__main__':
 
     if args.command == 'list':
         tasks = task_service.get_tasks_for_date()
-        print(tasks)
+        task_printer(tasks)
     elif args.command == 'add':
         task_service.insert_task(args.name)
 

@@ -45,8 +45,8 @@ class DatabaseTests(unittest.TestCase):
         self.service.insert_task("Foo", date(2021, 1, 5))
 
         tasks = self.service.get_tasks_for_date(date(2021, 1, 4))
-        self.assertEqual(len(tasks), 2)
-        for task in tasks:
+        self.assertEqual(list(tasks.keys()), [date(2021, 1, 4)])
+        for task in tasks[date(2021, 1, 4)]:
             self.assertEqual(task.date, date(2021, 1, 4))
 
     def tearDown(self):
