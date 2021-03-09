@@ -102,9 +102,10 @@ class TaskService:
 
 def task_printer(tasks: Dict[date, List[Task]]):
     for date in tasks.keys():
-        print(date)
+        print(date.strftime("%Y-%m-%d, %A"))
         for task in tasks[date]:
-            print("-", task)
+            done_symbol = "\u2714" if task.done else "\u2718"
+            print(f"  {done_symbol} {task.task} ({task.id})")
 
 
 if __name__ == '__main__':
@@ -114,7 +115,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='wdid',
                                      description='What did I do? A personal task list manager.')
     subparsers = parser.add_subparsers(dest='command')
+
+    # commands
     list_command = subparsers.add_parser('list', help='list tasks for different day(s)')
+
     add_command = subparsers.add_parser('add', help='add task for a certain day')
     add_command.add_argument('-n',
                              '--name',
@@ -125,6 +129,12 @@ if __name__ == '__main__':
                              '--date',
                              action='store',
                              help='date of the task')
+
+    update_command = subparsers.add_parser('update', help='update the specified task')
+    update_command.add_argument('id',
+                                action='store',
+                                type=int,
+                                help='id of the task')
     args = parser.parse_args()
 
     if args.command == 'list':
@@ -132,5 +142,11 @@ if __name__ == '__main__':
         task_printer(tasks)
     elif args.command == 'add':
         task_service.insert_task(args.name)
+    elif args.command == 'up':
+        task = task_service.get_task_by_id(args.id)
+        if not task:
+            print(f"Task with id {args.id} does not exist!")
+        else:
+            task_service.update_task(args.id, not task.done)
 
     task_service.close_connection()
