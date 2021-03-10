@@ -1,6 +1,7 @@
 import argparse
 import os
 import sqlite3
+import sys
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List, Dict
@@ -108,34 +109,28 @@ def task_printer(tasks: Dict[date, List[Task]]):
             print(f"  {done_symbol} {task.task} ({task.id})")
 
 
-if __name__ == '__main__':
-    task_service = TaskService()
-    task_service.create_schema()
-
-    parser = argparse.ArgumentParser(prog='wdid',
-                                     description='What did I do? A personal task list manager.')
+def parse_args(args: List[str]):
+    parser = argparse.ArgumentParser(prog='wdid', description='What did I do? A personal task list manager.')
     subparsers = parser.add_subparsers(dest='command')
 
     # commands
     list_command = subparsers.add_parser('list', help='list tasks for different day(s)')
 
     add_command = subparsers.add_parser('add', help='add task for a certain day')
-    add_command.add_argument('-n',
-                             '--name',
-                             action='store',
-                             help='name of the task',
-                             required=True)
-    add_command.add_argument('-d',
-                             '--date',
-                             action='store',
-                             help='date of the task')
+    add_command.add_argument('-n', '--name', action='store', help='name of the task', required=True)
+    add_command.add_argument('-d', '--date', action='store', help='date of the task')
 
     update_command = subparsers.add_parser('update', help='update the specified task')
-    update_command.add_argument('id',
-                                action='store',
-                                type=int,
-                                help='id of the task')
-    args = parser.parse_args()
+    update_command.add_argument('id', action='store', help='id of the task', type=int)
+
+    return parser.parse_args(args)
+
+
+def main(sys_args: List[str], db_path: str = DEFAULT_PATH):
+    task_service = TaskService(db_path)
+    task_service.create_schema()
+
+    args = parse_args(sys_args)
 
     if args.command == 'list':
         tasks = task_service.get_tasks_for_date()
@@ -150,3 +145,7 @@ if __name__ == '__main__':
             task_service.update_task(args.id, not task.done)
 
     task_service.close_connection()
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

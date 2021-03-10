@@ -7,7 +7,7 @@ from wdid import TaskService
 TEST_DATABASE = os.path.join(os.path.dirname(__file__), 'test.sqlite3')
 
 
-class DatabaseTests(unittest.TestCase):
+class TaskServiceTests(unittest.TestCase):
 
     def setUp(self):
         self.service = TaskService(TEST_DATABASE)
